@@ -27,7 +27,7 @@ parser.add_argument('--json_path', default='/data/coco/COCO.json', type=str, met
 parser.add_argument('--model_path', default='./network/weight/', type=str, metavar='DIR',
                     help='path to where the model saved') 
                     
-parser.add_argument('--lr', '--learning-rate', default=1., type=float,
+parser.add_argument('--lr', '--learning-rate', default=0.1, type=float,
                     metavar='LR', help='initial learning rate')
 
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
@@ -73,6 +73,7 @@ params_transform['flip_prob'] = 0.5
 
 params_transform['np'] = 56
 params_transform['sigma'] = 7.0
+params_transform['limb_width'] = 1.289
 
 def get_loss(saved_for_loss, heat_temp, heat_weight,
                vec_temp, vec_weight):

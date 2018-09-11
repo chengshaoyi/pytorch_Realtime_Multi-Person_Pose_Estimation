@@ -224,16 +224,21 @@ class Cocokeypoints(Dataset):
         img_idx = self.data[idx]['img_paths'][-16:-3]
 #        print img.shape
         if "COCO_val" in self.data[idx]['dataset']:
+            #print("COCO_val")
             mask_miss = cv2.imread(
-                self.mask_dir + 'mask2014/val2014_mask_miss_' + img_idx + 'png', 0)
+                self.mask_dir + '/val2014/mask_COCO_val2014_' + img_idx + 'jpg', 0)
+	    
         elif "COCO" in self.data[idx]['dataset']:
+            #print("COCO")
             mask_miss = cv2.imread(
-                self.mask_dir + 'mask2014/train2014_mask_miss_' + img_idx + 'png', 0)
+                self.mask_dir + '/train2014/mask_COCO_train2014_' + img_idx + 'jpg', 0)
 #        print self.root + 'mask2014/val2014_mask_miss_' + img_idx + 'png'
         meta_data = self.get_anno(self.data[idx])
 
         meta_data = self.add_neck(meta_data)
-
+        #print(img_idx)
+        #print('img shape:',img.shape)
+        #print('mask shape:',mask_miss.shape)
         meta_data, img, mask_miss = aug_scale(
             meta_data, img, mask_miss, self.params_transform)
 

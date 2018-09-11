@@ -24,11 +24,13 @@ from network import im_transform
 from evaluate.coco_eval import get_multiplier, get_outputs, handle_paf_and_heat
 
 
-weight_name = './network/weight/pose_model.pth'
+#weight_name = './network/weight/pose_model.pth'
+weight_name = './pretrained_model/pose_model_scratch.pth'
 
 model = get_model('vgg19')     
-model.load_state_dict(torch.load(weight_name))
 model = torch.nn.DataParallel(model).cuda()
+
+model.load_state_dict(torch.load(weight_name))
 model.float()
 model.eval()
 
