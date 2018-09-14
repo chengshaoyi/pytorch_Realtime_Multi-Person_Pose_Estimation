@@ -35,6 +35,38 @@ def make_stages(cfg_dict):
     layers += [conv2d]
     return nn.Sequential(*layers)
 
+def make_mobilenet_new_block(block):
+    layers = []
+    for i in range(len(block)):
+        one_ = block[i]
+        for k, v in one_.items():
+            inp = v[0]
+            oup = v[1]
+            stride = v[2]
+            if 'conv_bn' in k:
+                layers += [nn.Sequential(
+                    nn.Conv2d(inp, oup, 3, stride, 1, bias=False),
+                    nn.BatchNorm2d(oup),
+                    nn.ReLU6(inplace=True)
+                )]
+
+            elif 'conv_dw' in k:
+                layers += [
+                    nn.Sequential(
+                        # dw
+                        nn.Conv2d(inp, inp, 3, stride, 1, groups=inp, bias=False),
+                        nn.BatchNorm2d(inp),
+                        nn.ReLU6(inplace=True),
+                        # pw-linear
+                        nn.Conv2d(inp, oup, 1, 1, 0, bias=False),
+                        nn.BatchNorm2d(oup),
+                    )
+
+                ]
+            else:
+                assert False, 'unrecognized mobilenet primitive'
+    return nn.Sequential(*layers)
+
 
 def make_vgg19_block(block):
     """Builds a vgg19 block from a dictionary
@@ -91,6 +123,17 @@ def get_model(trunk='vgg19'):
                   {'conv4_3_CPM': [256, 256, 1, 3, 1]},
                   {'conv4_4_CPM': [256, 128, 1, 3, 1]}]
 
+    elif trunk == 'mobilenet_new':
+        block0 = [{'conv_bn': [3, 32, 1]},  # out: 3, 32, 184, 184
+                  {'conv_dw1': [32, 64, 1]},  # out: 32, 64, 184, 184
+                  {'conv_dw2': [64, 128, 2]},  # out: 64, 128, 92, 92
+                  {'conv_dw3': [128, 128, 1]},  # out: 128, 256, 92, 92
+                  {'conv_dw4': [128, 256, 2]},  # out: 256, 256, 46, 46
+                  {'conv_dw5': [256, 512, 1]},  # out: 256, 256, 46, 46
+                  {'conv_dw6': [512, 512, 1]},  # out: 256, 256, 46, 46
+                  {'conv_dw7': [512, 512, 2]},  # out: 256, 256, 46, 46
+                  {'conv_dw8': [512, 256, 1]},
+                  {'conv_dw9': [256, 128, 1]}]
     # Stage 1
     blocks['block1_1'] = [{'conv5_1_CPM_L1': [128, 128, 3, 1, 1]},
                           {'conv5_2_CPM_L1': [128, 128, 3, 1, 1]},
@@ -106,6 +149,7 @@ def get_model(trunk='vgg19'):
 
     # Stages 2 - 6
     for i in range(2, 7):
+        # in_channel, out_channel, kernel_size, stride, padding
         blocks['block%d_1' % i] = [
             {'Mconv1_stage%d_L1' % i: [185, 128, 7, 1, 3]},
             {'Mconv2_stage%d_L1' % i: [128, 128, 7, 1, 3]},
@@ -131,6 +175,9 @@ def get_model(trunk='vgg19'):
     if trunk == 'vgg19':
         print("Bulding VGG19")
         models['block0'] = make_vgg19_block(block0)
+    elif trunk == 'mobilenet_new' :
+        print("Building new mobilenet")
+        models['block0'] = make_mobilenet_new_block(block0)
 
     for k, v in blocks.items():
         models[k] = make_stages(list(v))
@@ -200,6 +247,7 @@ def get_model(trunk='vgg19'):
         def _initialize_weights_norm(self):
 
             for m in self.modules():
+                print('initialize:',m)
                 if isinstance(m, nn.Conv2d):
                     init.normal_(m.weight, std=0.01)
                     if m.bias is not None:  # mobilenet conv2d doesn't add bias
