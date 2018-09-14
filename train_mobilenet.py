@@ -26,7 +26,7 @@ parser.add_argument('--json_path', default='/data/coco/COCO.json', type=str, met
 parser.add_argument('--model_path', default='./network/weight/', type=str, metavar='DIR',
                     help='path to where the model saved') 
                     
-parser.add_argument('--lr', '--learning-rate', default=1., type=float,
+parser.add_argument('--lr', '--learning-rate', default=0.01, type=float,
                     metavar='LR', help='initial learning rate')
 
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
@@ -35,7 +35,7 @@ parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
 parser.add_argument('--epochs', default=200, type=int, metavar='N',
                     help='number of total epochs to run')
                     
-parser.add_argument('--weight-decay', '--wd', default=0.000, type=float,
+parser.add_argument('--weight-decay', '--wd', default=0.0004, type=float,
                     metavar='W', help='weight decay (default: 1e-4)')  
 parser.add_argument('--nesterov', dest='nesterov', action='store_true')     
                                                    
@@ -290,7 +290,7 @@ model = torch.nn.DataParallel(model).cuda()
 #        param.requires_grad = False
 
 trainable_vars = [param for param in model.parameters()]
-optimizer = torch.optim.SGD(trainable_vars, lr=args.lr,
+'''optimizer = torch.optim.SGD(trainable_vars, lr=args.lr,
                            momentum=args.momentum,
                            weight_decay=args.weight_decay,
                            nesterov=args.nesterov)
@@ -305,24 +305,25 @@ for epoch in range(5):
     val_loss = validate(valid_data, model, epoch)  
                                  
     writer.add_scalars('data/scalar_group', {'train loss': train_loss,
-                                             'val loss': val_loss}, epoch)            
+                                             'val loss': val_loss}, epoch)   '''
 # Release all weights                                   
 #for param in model.module.parameters():
 #    param.requires_grad = True
 
 #trainable_vars = [param for param in model.parameters()]
-optimizer = torch.optim.SGD(trainable_vars, lr=args.lr,
-                           momentum=args.momentum,
-                           weight_decay=args.weight_decay,
-                           nesterov=args.nesterov)          
+optimizer = torch.optim.Adam(model.parameters(), weight_decay=5e-4, lr=args.lr)
+#optimizer = torch.optim.SGD(trainable_vars, lr=args.lr,
+#                           momentum=args.momentum,
+#                           weight_decay=args.weight_decay,
+#                           nesterov=args.nesterov)
                                                     
-lr_scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.8, patience=5, verbose=True, threshold=0.0001, threshold_mode='rel', cooldown=3, min_lr=0, eps=1e-08)
+lr_scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.8, patience=3, verbose=True, threshold=0.0001, threshold_mode='rel', cooldown=3, min_lr=0, eps=1e-08)
 
 best_val_loss = np.inf
 
 
 model_save_filename = './network/weight/best_pose.pth'
-for epoch in range(5, args.epochs):
+for epoch in range(args.epochs):
 
     # train for one epoch
     train_loss = train(train_data, model, optimizer, epoch)
