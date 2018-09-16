@@ -26,7 +26,7 @@ parser.add_argument('--json_path', default='/data/coco/COCO.json', type=str, met
 parser.add_argument('--model_path', default='./network/weight/', type=str, metavar='DIR',
                     help='path to where the model saved') 
                     
-parser.add_argument('--lr', '--learning-rate', default=0.01, type=float,
+parser.add_argument('--lr', '--learning-rate', default=0.1, type=float,
                     metavar='LR', help='initial learning rate')
 
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
@@ -35,7 +35,7 @@ parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
 parser.add_argument('--epochs', default=200, type=int, metavar='N',
                     help='number of total epochs to run')
                     
-parser.add_argument('--weight-decay', '--wd', default=0.0004, type=float,
+parser.add_argument('--weight-decay', '--wd', default=0.0005, type=float,
                     metavar='W', help='weight decay (default: 1e-4)')  
 parser.add_argument('--nesterov', dest='nesterov', action='store_true')     
                                                    
@@ -52,7 +52,7 @@ parser.add_argument('--print_freq', default=20, type=int, metavar='N',
 from tensorboardX import SummaryWriter      
 args = parser.parse_args()  
                
-os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(str(e) for e in args.gpu_ids)
+#os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(str(e) for e in args.gpu_ids)
 
 params_transform = dict()
 params_transform['mode'] = 5
@@ -185,12 +185,16 @@ def train(train_loader, model, optimizer, epoch):
         end = time.time()
         if i % args.print_freq == 0:
             print_string = 'Epoch: [{0}][{1}/{2}]\t'.format(epoch, i, len(train_loader))
+            print_string += '\n'
             print_string +='Data time {data_time.val:.3f} ({data_time.avg:.3f})\t'.format( data_time=data_time)
             print_string += 'Loss {loss.val:.4f} ({loss.avg:.4f})'.format(loss=losses)
-
+            print_string +='\n'
             for name, value in meter_dict.items():
                 print_string+='{name}: {loss.val:.4f} ({loss.avg:.4f})\t'.format(name=name, loss=value)
+                print_string+='\n'
             print(print_string)
+        if i == 20:
+            break
     return losses.avg  
         
 def validate(val_loader, model, epoch):
@@ -241,7 +245,8 @@ def validate(val_loader, model, epoch):
             for name, value in meter_dict.items():
                 print_string+='{name}: {loss.val:.4f} ({loss.avg:.4f})\t'.format(name=name, loss=value)
             print(print_string)
-                
+        if i % 20 ==0:
+            break
     return losses.avg
 
 class AverageMeter(object):
@@ -311,13 +316,16 @@ for epoch in range(5):
 #    param.requires_grad = True
 
 #trainable_vars = [param for param in model.parameters()]
-optimizer = torch.optim.Adam(model.parameters(), weight_decay=5e-4, lr=args.lr)
-#optimizer = torch.optim.SGD(trainable_vars, lr=args.lr,
-#                           momentum=args.momentum,
-#                           weight_decay=args.weight_decay,
-#                           nesterov=args.nesterov)
+print('learning rate',args.lr)
+for param in model.parameters():
+    print(param.shape)
+#optimizer = torch.optim.Adam(model.parameters(), weight_decay=5e-4, lr=args.lr)
+optimizer = torch.optim.SGD(trainable_vars, lr=args.lr,
+                           momentum=args.momentum,
+                           weight_decay=args.weight_decay,
+                           nesterov=args.nesterov)
                                                     
-lr_scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.8, patience=3, verbose=True, threshold=0.0001, threshold_mode='rel', cooldown=3, min_lr=0, eps=1e-08)
+lr_scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3, verbose=True, threshold=0.0001, threshold_mode='rel', cooldown=3, min_lr=0, eps=1e-08)
 
 best_val_loss = np.inf
 
@@ -331,8 +339,8 @@ for epoch in range(args.epochs):
     # evaluate on validation set
     val_loss = validate(valid_data, model, epoch)   
     
-    writer.add_scalars('data/scalar_group', {'train loss': train_loss,
-                                             'val loss': val_loss}, epoch)
+    #writer.add_scalars('data/scalar_group', {'train loss': train_loss,
+    #                                         'val loss': val_loss}, epoch)
     lr_scheduler.step(val_loss)                        
     
     is_best = val_loss<best_val_loss
@@ -340,5 +348,5 @@ for epoch in range(args.epochs):
     if is_best:
         torch.save(model.state_dict(), model_save_filename)      
         
-writer.export_scalars_to_json(os.path.join(args.model_path,"tensorboard/all_scalars.json"))
-writer.close()    
+#writer.export_scalars_to_json(os.path.join(args.model_path,"tensorboard/all_scalars.json"))
+#writer.close()    

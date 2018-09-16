@@ -203,46 +203,60 @@ def get_model(trunk='vgg19'):
             self._initialize_weights_norm()
 
         def forward(self, x):
-
             saved_for_loss = []
+            #print(x.shape)
             out1 = self.model0(x)
-
+            #print('after vgg',out1.shape)
             out1_1 = self.model1_1(out1)
             out1_2 = self.model1_2(out1)
             out2 = torch.cat([out1_1, out1_2, out1], 1)
+
+            #print('after stage 1','1:', out1_1.shape,',2:',out1_2.shape,',cat:',out2.shape)
             saved_for_loss.append(out1_1)
             saved_for_loss.append(out1_2)
 
             out2_1 = self.model2_1(out2)
             out2_2 = self.model2_2(out2)
             out3 = torch.cat([out2_1, out2_2, out1], 1)
+
+            #print('after stage 2','1:', out2_1.shape,',2:',out2_2.shape,',cat:',out3.shape)
             saved_for_loss.append(out2_1)
             saved_for_loss.append(out2_2)
 
             out3_1 = self.model3_1(out3)
             out3_2 = self.model3_2(out3)
             out4 = torch.cat([out3_1, out3_2, out1], 1)
+
+            #print('after stage 3','1:', out3_1.shape,',2:',out3_2.shape,',cat:',out4.shape)
             saved_for_loss.append(out3_1)
             saved_for_loss.append(out3_2)
 
             out4_1 = self.model4_1(out4)
             out4_2 = self.model4_2(out4)
             out5 = torch.cat([out4_1, out4_2, out1], 1)
+
+            #print('after stage 4','1:', out4_1.shape,',2:',out4_2.shape,',cat:',out5.shape)
             saved_for_loss.append(out4_1)
             saved_for_loss.append(out4_2)
 
             out5_1 = self.model5_1(out5)
             out5_2 = self.model5_2(out5)
             out6 = torch.cat([out5_1, out5_2, out1], 1)
+
+            #print('after stage 5','1:', out5_1.shape,',2:',out5_2.shape,',cat:',out6.shape)
             saved_for_loss.append(out5_1)
             saved_for_loss.append(out5_2)
 
             out6_1 = self.model6_1(out6)
             out6_2 = self.model6_2(out6)
+
+            #print('after stage 6','1:', out6_1.shape,',2:',out6_2.shape)
             saved_for_loss.append(out6_1)
             saved_for_loss.append(out6_2)
 
             return (out6_1, out6_2), saved_for_loss
+
+
 
         def _initialize_weights_norm(self):
 
