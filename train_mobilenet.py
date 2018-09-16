@@ -324,29 +324,29 @@ def main():
 
     model_save_filename = './network/weight/best_pose.pth'
 
-
+    # load data
+    train_data = get_loader(args.json_path, args.data_dir,
+                            args.mask_dir, 368, 8,
+                            'vgg', args.batch_size, params_transform=params_transform,
+                            shuffle=True, training=True, num_workers=1)
+    print('train dataset len: {}'.format(len(train_data.dataset)))
 
     # validation data
+    valid_data = get_loader(args.json_path, args.data_dir,
+                            args.mask_dir, 368, 8,
+                            preprocess='vgg', training=False,
+                            batch_size=args.batch_size, params_transform=params_transform,
+                            shuffle=False, num_workers=1)
+    print('val dataset len: {}'.format(len(valid_data.dataset)))
 
     for epoch in range(args.epochs):
-        # load data
-        train_data = get_loader(args.json_path, args.data_dir,
-                                args.mask_dir, 368, 8,
-                                'vgg', args.batch_size, params_transform=params_transform,
-                                shuffle=True, training=True, num_workers=1)
-        print('train dataset len: {}'.format(len(train_data.dataset)))
-        # train for one epoch
-        train(train_data, model, optimizer, epoch, args)
-        del train_data
 
-        valid_data = get_loader(args.json_path, args.data_dir, args.mask_dir, 368,
-                                8, preprocess='vgg', training=False,
-                                batch_size=args.batch_size, params_transform=params_transform, shuffle=False,
-                                num_workers=1)
-        print('val dataset len: {}'.format(len(valid_data.dataset)))
+        # train for one epoch
+        #train_loss = train(train_data, model, optimizer, epoch, args)
+
         # evaluate on validation set
-        val_loss = validate(valid_data, model, epoch, args)
-        del valid_data
+        val_loss = validate(train_data, model, epoch, args)
+
         #writer.add_scalars('data/scalar_group', {'train loss': train_loss,
         #                                         'val loss': val_loss}, epoch)
         lr_scheduler.step(val_loss)
