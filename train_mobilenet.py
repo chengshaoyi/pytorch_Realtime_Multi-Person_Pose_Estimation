@@ -184,7 +184,7 @@ def validate(val_loader, model, epoch, args):
             for name, value in meter_dict.items():
                 print_string+='{name}: {loss.val:.4f} ({loss.avg:.4f})\t'.format(name=name, loss=value)
             print(print_string)
-        if i % 20 ==0:
+        if i == 20 :
             break
     return losses.avg
 
