@@ -272,18 +272,6 @@ def main():
 
 
     print("Loading dataset...")
-    # load data
-    train_data = get_loader(args.json_path, args.data_dir,
-                            args.mask_dir, 368, 8,
-                            'vgg', args.batch_size, params_transform = params_transform,
-                            shuffle=True, training=True, num_workers=1)
-    print('train dataset len: {}'.format(len(train_data.dataset)))
-
-    # validation data
-    valid_data = get_loader(args.json_path, args.data_dir, args.mask_dir, 368,
-                                8, preprocess='vgg', training=False,
-                                batch_size=args.batch_size, params_transform = params_transform, shuffle=False, num_workers=1)
-    print('val dataset len: {}'.format(len(valid_data.dataset)))
 
     # model
     model = get_model(trunk='mobilenet_new')
@@ -298,7 +286,7 @@ def main():
     #    for param in model.module.model0[i].parameters():
     #        param.requires_grad = False
 
-    trainable_vars = [param for param in model.parameters()]
+    #trainable_vars = [param for param in model.parameters()]
     '''optimizer = torch.optim.SGD(trainable_vars, lr=args.lr,
                                momentum=args.momentum,
                                weight_decay=args.weight_decay,
@@ -324,7 +312,7 @@ def main():
     for param in model.parameters():
         print(param.shape)
     #optimizer = torch.optim.Adam(model.parameters(), weight_decay=5e-4, lr=args.lr)
-    optimizer = torch.optim.SGD(trainable_vars, lr=args.lr,
+    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr,
                                momentum=args.momentum,
                                weight_decay=args.weight_decay,
                                nesterov=args.nesterov)
@@ -335,14 +323,30 @@ def main():
 
 
     model_save_filename = './network/weight/best_pose.pth'
+
+
+
+    # validation data
+
     for epoch in range(args.epochs):
-
+        # load data
+        train_data = get_loader(args.json_path, args.data_dir,
+                                args.mask_dir, 368, 8,
+                                'vgg', args.batch_size, params_transform=params_transform,
+                                shuffle=True, training=True, num_workers=1)
+        print('train dataset len: {}'.format(len(train_data.dataset)))
         # train for one epoch
-        train_loss = train(train_data, model, optimizer, epoch, args)
+        train(train_data, model, optimizer, epoch, args)
+        del train_data
 
+        valid_data = get_loader(args.json_path, args.data_dir, args.mask_dir, 368,
+                                8, preprocess='vgg', training=False,
+                                batch_size=args.batch_size, params_transform=params_transform, shuffle=False,
+                                num_workers=1)
+        print('val dataset len: {}'.format(len(valid_data.dataset)))
         # evaluate on validation set
         val_loss = validate(valid_data, model, epoch, args)
-
+        del valid_data
         #writer.add_scalars('data/scalar_group', {'train loss': train_loss,
         #                                         'val loss': val_loss}, epoch)
         lr_scheduler.step(val_loss)
