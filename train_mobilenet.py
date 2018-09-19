@@ -132,8 +132,8 @@ def train(train_loader, model, optimizer, epoch, args):
                 print_string+='{name}: {loss.val:.4f} ({loss.avg:.4f})\t'.format(name=name, loss=value)
                 print_string+='\n'
             print(print_string)
-        if i == 20:
-            break
+        #if i == 20:
+        #    break
     return losses.avg  
         
 def validate(val_loader, model, epoch, args):
@@ -155,7 +155,7 @@ def validate(val_loader, model, epoch, args):
     for i, (img, heatmap_target, heat_mask, paf_target, paf_mask) in enumerate(val_loader):
         # measure data loading time
         data_time.update(time.time() - end)
-
+        print(img.shape)
         img = img.cuda()
         heatmap_target = heatmap_target.cuda()
         heat_mask = heat_mask.cuda()
@@ -184,8 +184,8 @@ def validate(val_loader, model, epoch, args):
             for name, value in meter_dict.items():
                 print_string+='{name}: {loss.val:.4f} ({loss.avg:.4f})\t'.format(name=name, loss=value)
             print(print_string)
-        if i == 20 :
-            break
+        #if i == 20 :
+        #    break
     return losses.avg
 
 class AverageMeter(object):
@@ -221,7 +221,7 @@ def main():
     parser.add_argument('--model_path', default='./network/weight/', type=str, metavar='DIR',
                         help='path to where the model saved')
 
-    parser.add_argument('--lr', '--learning-rate', default=0.1, type=float,
+    parser.add_argument('--lr', '--learning-rate', default=0.04, type=float,
                         metavar='LR', help='initial learning rate')
 
     parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
@@ -311,13 +311,13 @@ def main():
     print('learning rate',args.lr)
     for param in model.parameters():
         print(param.shape)
-    #optimizer = torch.optim.Adam(model.parameters(), weight_decay=5e-4, lr=args.lr)
+    #optimizer = torch.optim.Adam(model.parameters(), weight_decay=5e-4, lr=args.lr, eps=1e-05)
     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr,
                                momentum=args.momentum,
                                weight_decay=args.weight_decay,
                                nesterov=args.nesterov)
 
-    lr_scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3, verbose=True, threshold=0.0001, threshold_mode='rel', cooldown=3, min_lr=0, eps=1e-08)
+    lr_scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=2, verbose=True, threshold=0.0001, threshold_mode='rel', cooldown=3, min_lr=0, eps=1e-08)
 
     best_val_loss = np.inf
 
@@ -342,10 +342,10 @@ def main():
     for epoch in range(args.epochs):
 
         # train for one epoch
-        #train_loss = train(train_data, model, optimizer, epoch, args)
+        train_loss = train(train_data, model, optimizer, epoch, args)
 
         # evaluate on validation set
-        val_loss = validate(train_data, model, epoch, args)
+        val_loss = validate(valid_data, model, epoch, args)
 
         #writer.add_scalars('data/scalar_group', {'train loss': train_loss,
         #                                         'val loss': val_loss}, epoch)

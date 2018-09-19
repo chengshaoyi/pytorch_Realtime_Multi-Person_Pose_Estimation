@@ -107,6 +107,7 @@ def get_outputs(multiplier, img, model, preprocess):
     # padding
     max_cropped, _, _ = im_transform.crop_with_factor(
         img, max_size, factor=8, is_ceil=True)
+    print('cropped:', max_cropped.shape)
     batch_images = np.zeros(
         (len(multiplier), 3, max_cropped.shape[0], max_cropped.shape[1]))
 
